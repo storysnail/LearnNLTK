@@ -5,88 +5,38 @@ import xlwt  # 用于写入xlsx
 from xlutils.copy import copy # 修改xlsx
 
 #如果需要强大的excel编辑功能，可以使用xlwings
-
-def Read_Txt():
-    file_object = open('review22.txt',encoding='utf-8') 
-    try:
-        line = file_object.readline() 
-        while line:
-            print(line)
-            line = file_object.readline() 
-    finally:
-        file_object.close()
-
 #Workbook就是一个excel工作表；
 #Sheet是工作表中的一张表页;
 #Cell就是简单的一个格
-def Read_XLSX():
-    workbook = open_workbook(r'./review21.xlsx')  # 打开xls文件
-    sheet_names= workbook.sheet_names()  # 打印所有sheet名称，是个list
-    sheet_num = len(sheet_names)
+class XlsxOp(object):
+    def __init__(self):
+        self.XlsxOpState = False
 
-    if sheet_num == 1:
-        sheet1 = workbook.sheet_by_index(0)  # 得到sheet1
-        #sheet1= workbook.sheet_by_name('sheet1') 
-        print(sheet1.name, sheet1.nrows, sheet1.ncols)  # sheet1的名称、行数、列数
-
-        # 获得某一行或某一列数据，返回list
-        #row_4 = sheet1.row_values(3)
-        #cloumn_5 = sheet1.col_values(4)
-        #Row_4 = sheet1.row(3)  # 此方法list中包含单元格类型
-        #Column_5 = sheet1.col(4)  # 此方法list中包含单元格类型
-
-        #col_values = sheet1.col_values(col)  
-        #print(content)
+    def Open_XLSX(self,filename):
+        try:
+            workbook = open_workbook(filename)  # 打开xls文件
+            sheet_names= workbook.sheet_names()  # 返回所有sheet名称，sheet_names是个list
+            sheet_num = len(sheet_names)
+            if sheet_num == 1:
+                self.sheet1 = workbook.sheet_by_index(0)  # 得到sheet1
+                self.XlsxOpState = True
+        except Exception as err:
+            print(f'{excel_path}或者{sheet_id}不存在')
+            raise err
         
-        for row in range(0,int(sheet1.nrows),1):
-            for col in range(0,int(sheet1.ncols),1):
-                cell_value = sheet1.cell(row, col).value
+        return self.XlsxOpState
 
-                #cell_1_1 = ws.cell(0, 0).value
-                #cell_1_1 = ws.row_values(0)[0]
-                #cell_1_1 = ws.col_values(0)[0]
-                #cell_1_1 = ws.row(0)[0].value
-                #cell_1_1 = ws.col(0)[0].value
-                print(cell_value)
-                
-            if row > 100:
-                break
-
-def Write_XLSX():
-    # 创建一个新的工作薄
-    Workbook = xlwt.Workbook(encoding="utf-8")
     
-    # 在其上创建一个新的工作表
-    sheet = Workbook.add_sheet('S1', cell_overwrite_ok=True)
-
-    # 按单元格方式添加数据
-    sheet.write(0, 0, 'HELLO')
-    # 整行整列的添加数据
-    title = ['NAME', 'AGE', 'SEX']
-    for i in range(len(title)):
-        sheet.write(0, i, title[i])
-    name = ['Tom', 'Smith', 'SuiXin', 'Make']
-    for j in range(len(name)):
-        sheet.write(j + 1, 0, name[j])
-    
-    # 保存文件
-    sheet.save('test.xls')
-
-def Modify_XLSX():
-    rd_book = xlrd.open_workbook('test.xls')
-    
-    # 使用copy方法将xlrd.Book对象拷贝为一个xlwt.workbook对象，可写入
-    wt_book = copy(rd_book)
-    # 获取一个sheet对象（支持index和name）
-    ws = wt_book.get_sheet('S1')
-    # 修改工作表
-    age = [32, 38, 24, 40]
-    for j in range(len(age)):
-        ws.write(j + 1, 1, age[j])
+    def Read_XLSX_Comment(self,row):
+        if(self.XlsxOpState == False):
+            return ''
         
-    # 保存文件
-    wt_book.save('test_new.xls')
-
-if __name__=="__main__":
-    Read_XLSX()
+        if(row < 0):
+            return ''
+        
+        if(row > int(self.sheet1.nrows)):
+            return ''
+        
+        cell_value = self.sheet1.cell(row, 1).value
+        return cell_value
 
