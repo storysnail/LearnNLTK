@@ -1,0 +1,35 @@
+import pymysql
+import pandas as pd
+
+class usesql:
+    
+    def _init_(self,conn,cursor):
+        self.conn = conn
+        self.cursor = cursor
+
+
+    def getdata(self,sql='select review from review21;'):   # 从mysql里读取数据
+        self.conn = pymysql.connect(
+            host = 'localhost',
+            port = 3306,
+            user = 'Leslie',
+            password = 'hsh56912341',
+            db = 'Yelp',
+            charset = 'utf8'
+        )
+        self.cursor = self.conn.cursor()
+        readfile = self.cursor.execute(sql)
+        return list(readfile.fetchmany(10))    #测试的时候先用fetchmany（10）,正式运行时再改成fetchall
+        
+
+    def output(self):
+        df = pd.DataFrame (list(output))
+        df.to_sql(         #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+            name='firstest',
+            conn=conn,
+            if_exists='append',
+            index=False,
+        )
+        self.cursor.close()
+        self.conn.close()
+        print("Finished")
