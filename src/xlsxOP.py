@@ -5,7 +5,7 @@ import xlwt  # 用于写入xlsx
 from xlutils.copy import copy # 修改xlsx
 '''
     XlsxOp用来读取Excel工作表中的数据，如果需要强大的excel编辑功能，可以使用xlwings。
-    review21.xlsx Excel表格中只有一个sheet1工作表，该工作表共21001行，每一行的第一列
+    review21-en.xlsx Excel表格中只有一个sheet1工作表，该工作表共21001行，每一行的第一列
     都保存了一条用户评论。
     XlsxOp的作用就是打开该工作表、读取指定行内第一列中的评论内容。
 '''
@@ -28,7 +28,7 @@ class XlsxOp(object):
             # 得到工作表的数量
             sheet_num = len(sheet_names)
 
-            # review21.xlsx表格应该只有一个工作表，所以sheet_num应该是1
+            # review21-en.xlsx表格只有一个工作表，所以sheet_num应该是1
             if sheet_num == 1:
                 # 取得sheet1工作表并保存在本类的成员变量self.sheet1中
                 # 当工作表通过数字索引表示时，索引值是从0开始计算的
