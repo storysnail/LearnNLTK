@@ -10,7 +10,7 @@ from mariadbOP import MariadbOp
 
 
 def Read_Txt():
-    file_object = open('review22.txt',encoding='utf-8') 
+    file_object = open('./data/review22-en.txt',encoding='utf-8') 
     try:
         line = file_object.readline() 
         while line:
@@ -24,7 +24,7 @@ def Read_Txt():
 #-----------------------------------------------------------------------------------------------------
 if __name__=="__main__":
     excelFile = XlsxOp()
-    if(excelFile.Open_XLSX(r'./review21.xlsx') == False):
+    if(excelFile.Open_XLSX(r'./data/review21-en.xlsx') == False):
         print('invalid file name or sheet name')
         exit()
 
