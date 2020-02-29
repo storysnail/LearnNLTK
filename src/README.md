@@ -17,8 +17,9 @@
  把nltk_data/tokenizers/punkt.zip解压，问题解决。</br>
  </br>
  然后是需要用gensim，用清华的源会快很多：</br>
- pip3 install -i  https://pypi.tuna.tsinghua.edu.cn/simple/ gensim
-
+ pip3 install -i  https://pypi.tuna.tsinghua.edu.cn/simple/ gensim</br>
+</br>
+测试中文、英文的分句和分词，词袋(语料庫）、语料庫数字映射、各段文本的向量表，以及计算两段文本的余弦相似度.</br>
 </br>
 2020-02-28</br>
 &emsp; 初步了解NLTK对英文的分词操作，安装jieba模块，阅读jieba中文分词手册，用jieba做了第一次中文分词尝试。</br>
