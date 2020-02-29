@@ -1,6 +1,23 @@
 # LearnNLTK
 
 
+</br>
+2020-02-29</br>
+&emsp; 开始尝试用NLTK分词，但nltk_data下只有netword,翻墙下载了638MB的nltk_data.zip,解压后将里面的packages</br>
+文件夹下的所有文件拷贝到nltk_data目录下，以为这样就可以了，运行程序却提示下面的错误：</br>
+<pre>
+  Resource [93mpunkt[0m not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('punkt')
+  Attempted to load [tokenizers/punkt/PY3/english.pickle
+ </pre>
+ 猪头了一个多小时，期间在网上各种搜索也没有解决方法！饭后灵光一现，提示的这么明白了还乱搜索，</br>
+ 把nltk_data/tokenizers/punkt.zip解压，问题解决。</br>
+ </br>
+ 然后是需要用gensim，用清华的源会快很多：</br>
+ pip3 install -i  https://pypi.tuna.tsinghua.edu.cn/simple/ gensim
 
 </br>
 2020-02-28</br>

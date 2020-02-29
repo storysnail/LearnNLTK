@@ -6,18 +6,27 @@ import sys
 
 from xlsxOP import XlsxOp
 from mariadbOP import MariadbOp
+from Bow_CosineSimilarity import Bow_CosSim
 
 
-
-def Read_Txt():
-    file_object = open('./data/review22-en.txt',encoding='utf-8') 
+def Read_Txt(row):
+    CurRow = 0
+    getLine = ''
+    
+    file_object = open('./data/review20-cn.txt',encoding='utf-8') 
     try:
         line = file_object.readline() 
         while line:
-            print(line)
-            line = file_object.readline() 
+            if(CurRow == row):
+                getLine = line
+                break
+            
+            line = file_object.readline()
+            CurRow = CurRow + 1
     finally:
         file_object.close()
+
+    return getLine
 
 #=====================================================================================================
 #主函数
@@ -28,6 +37,20 @@ if __name__=="__main__":
         print('invalid file name or sheet name')
         exit()
 
+    CN_Comment1 = Read_Txt(100)
+    CN_Comment2 = Read_Txt(67)
+    bcs = Bow_CosSim(CN_Comment1,CN_Comment2)
+    stoplist='! , . / < > \ in'.split()
+    stoplist.append('\n')
+    bcs.CosSim(stoplist)
+    
+    EN_restaurant_name1,EN_Comment1 = excelFile.Read_XLSX_RestaurantName_and_Comment(10)
+    EN_restaurant_name2,EN_Comment2 = excelFile.Read_XLSX_RestaurantName_and_Comment(11)
+    bcs = Bow_CosSim(EN_Comment1,EN_Comment2)
+    stoplist='! , . this at is a of the and to in'.split()
+    bcs.CosSim(stoplist)
+    
+    '''
     mariaDB = MariadbOp()
     mariaDB.open()
     mariaDB.create_AffectiveWords_table()
@@ -38,6 +61,7 @@ if __name__=="__main__":
 
     mariaDB.fetch()
     mariaDB.close()
+    '''
 #=====================================================================================================
 
 
