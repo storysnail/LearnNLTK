@@ -1,6 +1,9 @@
 # LearnNLTK
 
-
+</br>
+2020-03-01</br>
+&emsp; 用WordNet实现中文、英文文本的情感分析</br>
+下面的模型训练需要花时间研究研究资料了。
 </br>
 2020-02-29</br>
 &emsp; 开始尝试用NLTK分词，但nltk_data下只有netword,翻墙下载了638MB的nltk_data.zip,解压后将里面的packages</br>
