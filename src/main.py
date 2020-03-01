@@ -7,7 +7,7 @@ import sys
 from xlsxOP import XlsxOp
 from mariadbOP import MariadbOp
 from Bow_CosineSimilarity import Bow_CosSim
-
+from sentiWord import SentiWord
 
 def Read_Txt(row):
     CurRow = 0
@@ -37,6 +37,17 @@ if __name__=="__main__":
         print('invalid file name or sheet name')
         exit()
 
+    CN_Comment = Read_Txt(105)
+    sentiWd = SentiWord(CN_Comment)
+    stoplist='! , . / < > \ in'.split()
+    sentiWd.SentiValue(stoplist)
+    
+    EN_restaurant_name,EN_Comment = excelFile.Read_XLSX_RestaurantName_and_Comment(10)
+    sentiWd = SentiWord(EN_Comment)
+    stoplist='! , . this at is a of the and to in'.split()
+    sentiWd.SentiValue(stoplist)
+    
+    '''
     CN_Comment1 = Read_Txt(100)
     CN_Comment2 = Read_Txt(67)
     bcs = Bow_CosSim(CN_Comment1,CN_Comment2)
@@ -50,7 +61,7 @@ if __name__=="__main__":
     stoplist='! , . this at is a of the and to in'.split()
     bcs.CosSim(stoplist)
     
-    '''
+    
     mariaDB = MariadbOp()
     mariaDB.open()
     mariaDB.create_AffectiveWords_table()
