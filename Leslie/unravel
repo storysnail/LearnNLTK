@@ -107,18 +107,18 @@ class prepare:
 class operate:
     
     def _main_(self):   #过程整合
-        data = usesql.getdata('select review from review21;')    #从mysql读取数据                                                   #分句
+        data = usesql.getdata('select review from review21;')    #从mysql读取数据                                                   
         sent = prepare.sentoken(data)           #分句
-        cleansent = sentclean(sent)     #去除特殊符号
-        word = wordtoken(cleansent)     #分词
-        taggedword = wordtag(word)      #标注词性
+        cleansent = sentclean(sent)             #去除特殊符号
+        word = wordtoken(cleansent)             #分词
+        taggedword = wordtag(word)              #标注词性
         posedword = get_wordnet_pos(taggedword) #利用tag得到pos
-        stemword = wordstem(posedword)                                                                      #去标点
-        cleanword = wordclean(stemword)
+        stemword = wordstem(posedword)          #词形还原
+        cleanword = wordclean(stemword)         #去停用词
         return cleanword          
 
 
-cleanword = operate._main_()
+cleanword = operate._main_()   #导出清洗后的数据到mysql
 output(cleanword)
 
 print('Finished')
