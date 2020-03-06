@@ -9,14 +9,10 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 class usesql:
-    
-    def _init_(self,conn,cursor):
-        self.conn = conn
-        self.cursor = cursor
 
 
     def getdata(self,sql):   # 从mysql里读取数据
-        self.conn = pymysql.connect(
+        conn = pymysql.connect(
             host = 'localhost',
             port = 3306,
             user = 'Leslie',
@@ -24,101 +20,138 @@ class usesql:
             db = 'Yelp',
             charset = 'utf8'
         )
-        self.cursor = self.conn.cursor()
-        sql='select review from review21;'
-        readfile = self.cursor.execute(sql)
-        result = readfile.fetchmany(10)   #测试的时候先用fetchmany（10）,正式运行时再改成fetchall
-        return list(result)
-        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql)
+            result = cursor.ferchmany(5)   #测试的时候先用fetchmany（）,正式运行时再改成fetchall
+            return list(result)
+            print("sql getdata")
+        except:
+            print("Error: unable to fetch data")
+         
 
-    def output(self,word):
-        self.cursor = self.conn.cursor()
-        df = pd.DataFrame (list(word))
-        df.to_sql(         #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+    def output(self,cleanwords):
+        conn = pymysql.connect(
+            host = 'localhost',
+            port = 3306,
+            user = 'Leslie',
+            password = 'hsh56912341',
+            db = 'Yelp',
+            charset = 'utf8'
+        )
+        cursor = conn.cursor()
+        df = pd.DataFrame (list(cleanwords))
+        df.to_sql(              #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
             name='firstest',
             conn=conn,
             if_exists='append',
             index=False,
         )
-        self.cursor.close()
-        self.conn.close()
+        cursor.close()
+        conn.close()
+        print("sql output")
         
 
 class prepare:
 
-    def _init_(self,word,relativity,id,ordinal):
-        self.word = word
-        self.relativity = relativity
-        self.id = id
-        self.ordinal = ordinal
-        
     def sentoken(self,data):   #分句
-        sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-        self.sent = sent_tokenizer.tokenize(str(data))
-        return self.sent
+        token = nltk.data.load('tokenizers/punkt/english.pickle')
+        sents = token.tokenize(str(data))
+        return sents
         
-    def sentclean(self,sent):   #去除标点等无用的符号
-        self.sent = sent
-        identify = str.maketrans('', '')
-        delEStr = string.punctuation + string.digits      #ASCII 标点符号，数字  
-        for sent in self.sent:
-            cleansent = sent.translate(identify, delEStr) #去掉ASCII 标点符号和空格
-        return cleansent
+    def sentclean(self,sents):   #去除标点等无用的符号
+        delEStr = string.punctuation + string.digits
+        DelEDict = {}
+        for ch in delEStr:
+            DelEDict[ch] = ''
+        trans = str.maketrans(DelEDict)
 
-    def wordtoken(self,sent):     #分词     
-        for sent in self.sent:
-            self.word = nltk.word_tokenize(sent)
-        return self.word
+        cleansents = []
+        for sent in sents:
+            cleansent = sent.translate(trans) #去掉ASCII标点符号
+            cleansents.append(cleansent)
+        return cleansents
 
-    def wordtag(self,word):        #标注词性
-        self.tag = [nltk.pos_tag(word) for word in self.word]
-        return self.tag
+    def wordtoken(self,cleansents):
+        words = []    #分词     
+        for cleansent in cleansents:
+            word = nltk.word_tokenize(cleansent)
+            words.append(word)
+        return words
 
-    def get_wordnet_pos(self,tag):  #通过tag获得pos
-        if tag.startswith('J'):
-            return nltk.corpus.wordnet.ADJ
-        elif tag.startswith('V'):
-            return nltk.corpus.wordnet.VERB
-        elif tag.startswith('N'):
-            return nltk.corpus.wordnet.NOUN
-        elif tag.startswith('R'):
-            return nltk.corpus.wordnet.ADV
-        else:
-            return ''
-     def wordstem(self,word):   #词干提取
+    def wordtag(self,words): #标注词性
+        word_tags = []   
+        for word in words:    
+            word_tags.extend(nltk.pos_tag(word)) 
+        return word_tags
+
+    def get_wordnet_pos(self,word_tags):  #通过tag获得pos
+        word_poses = []
+        for word_tag in word_tags:        #此处的 word_tag is like ('bigger', 'JJR')
+            if word_tag[1].startswith('J'):
+                pos = nltk.corpus.wordnet.ADJ
+            elif word_tag[1].startswith('V'):
+                pos = nltk.corpus.wordnet.VERB
+            elif word_tag[1].startswith('N'):
+                pos = nltk.corpus.wordnet.NOUN
+            elif word_tag[1].startswith('R'):
+                pos = nltk.corpus.wordnet.ADV        
+            else:
+                pos = ''
+            word_poses.append([word_tag[0],pos])
+        return word_poses
+
+    def wordstem(self,word_poses):   
         lmtzr = WordNetLemmatizer()
-        stemword = []
-        for word in self.word:
-            if word:
-                tag = nltk.pos_tag(word_tokenize(word))   # tag is like [('bigger', 'JJR')]
-                pos = get_wordnet_pos(tag[0][1])
-                if pos:                # lemmatize()方法将word还原成pos词性的形式
-                    lemmatized_word = lmtzr.lemmatize(word, pos)
-                    stemword.append(lemmatized_word)
-                else:
-                    stemword.append(word)
-        return stemword
+        stemwords = []
+        for word_pos in word_poses:
+            if word_pos:                                # lemmatize()方法将word还原成pos词性的形式
+                lemmatized_word = lmtzr.lemmatize(word_pos)  
+                stemwords.append(lemmatized_word)
+            else:
+                stemwords.append(word_pos[0])      # word_pos = [word_tag[0],pos]
+        return stemwords
     
-     def wordclean(self,word):   #去除停用词(emoji什么的先不管后续有时间再处理)
-        for word in self.word:
-            cleanword = [word for word in self.word if word not in stopwords.words('english')]
-        return cleanword
+    def wordclean(self,stemwords):   #去除停用词(emoji什么的先不管后续有时间再处理)
+        cleanwords = []
+        for stemword in stemwords:
+            if stemword not in stopwords.words('english'):
+               cleanwords.append(stemword)
+        return cleanwords
 
 class operate:
     
     def _main_(self):   #过程整合
-        data = usesql.getdata('select review from review21;')    #从mysql读取数据                                                   
-        sent = prepare.sentoken(data)           #分句
-        cleansent = sentclean(sent)             #去除特殊符号
-        word = wordtoken(cleansent)             #分词
-        taggedword = wordtag(word)              #标注词性
-        posedword = get_wordnet_pos(taggedword) #利用tag得到pos
-        stemword = wordstem(posedword)          #词形还原
-        cleanword = wordclean(stemword)         #去停用词
-        return cleanword          
+        sql = usesql()
+        data = sql.getdata('select review from review21;')  #从mysql读取数据                                                  
+        prep = prepare()
+        sents = prep.sentoken(data)           #分句
+        print(sents)
+        print('\n')
+        cleansents = prep.sentclean(sents)    #去除特殊符号
+        print(cleansents) 
+        print('\n')    
+        words = prep.wordtoken(cleansents) 
+        print(words)
+        print('\n')    #分词
+        word_tags = prep.wordtag(words)      #标注词性
+        print(word_tags)
+        print('\n')
+        word_poses = prep.get_wordnet_pos(word_tags) #利用tag得到pos
+        print(word_poses)
+        print('\n')
+        stemwords = prep.wordstem(word_poses)          #词形还原                                                            
+        print(stemwords)
+        print('\n')
+        cleanwords = prep.wordclean(stemwords)         #去停用词
+        print(cleanwords)
+        print('\n')
+        return cleanwords          
 
+op = operate()
+cleanwords = op._main_()
 
-cleanword = operate._main_()   #导出清洗后的数据到mysql
-output(cleanword)
+sql = usesql()        #导出清洗后的数据到mysql
+sql.output(cleanwords)
 
 print('Finished')
