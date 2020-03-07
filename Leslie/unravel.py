@@ -105,20 +105,28 @@ class prepare:
 
             posedwords.append([word_tag[0],pos])
         return posedwords
-        
-    def wordstem(self,posedwords):   #词干提取
+
+    #word_poses是成员函数get_wordnet_pos返回的list
+    def wordstem(self,word_poses):
         lmtzr = WordNetLemmatizer()
-        stemword = []
-        for word in self.word:
-            if word:
-                tag = nltk.pos_tag(word_tokenize(word))   # tag is like [('bigger', 'JJR')]
-                pos = get_wordnet_pos(tag[0][1])
-                if pos:                # lemmatize()方法将word还原成pos词性的形式
-                    lemmatized_word = lmtzr.lemmatize(word, pos)
-                    stemword.append(lemmatized_word)
-                else:
-                    stemword.append(word)
-        return stemword
+        stemwords = []
+        for word_pos in word_poses:
+            """
+            遍历word_poses list中的每一个结点并将结点赋值给word_pos，
+            word_pos也是一个list，有两个结点，第一个word_pos[0]存储单词，第二个word_pos[1]存储pos
+            在get_wordnet_pos成员函数中只处理了"J V N R"四种词性，其它词性一律返回空字符''
+            lmtzr.lemmatize函数需要传人两个参数，第一个是单词、第二个是词性，如果传人的词性是空字符
+            则会出错，所以这里将"J V N R"四种词性之外的其它词性一律标识为"N",注意：这种做法很粗暴，
+            会因为标识了错误的词性而导致lmtzr.lemmatize返回错误的结果,查看输出结果可以发现as被错误的
+            转换成了a!另外这里也没有对一些特殊词做处理，例如Im
+            """
+            if(len(word_pos[1]) < 1):
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],nltk.corpus.wordnet.NOUN)  
+            else:
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],word_pos[1])  
+            stemwords.append(lemmatized_word)
+
+        return stemwords
     
     def wordclean(self,word):   #去除停用词(emoji什么的先不管后续有时间再处理)
         for word in self.word:
@@ -148,9 +156,8 @@ class operate:
         posedwords = prep.get_wordnet_pos(taggedwords) #利用tag得到pos
         print(posedwords)
         print('\n')
-        #后边的自己写吧
-        #stemword = prep.wordstem(posedwords)          #词形还原
-        #print(stemword)
+        stemword = prep.wordstem(posedwords)          #词形还原
+        print(stemword)
         #print('\n')
         #cleanword = prep.wordclean(stemword)         #去停用词
         #return cleanword          
