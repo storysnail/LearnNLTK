@@ -23,11 +23,12 @@ class usesql:
         cursor = conn.cursor()
         try:
             cursor.execute(sql)
-            result = cursor.ferchmany(5)   #测试的时候先用fetchmany（）,正式运行时再改成fetchall
+            result = cursor.fetchmany(5)   #测试的时候先用fetchmany（）,正式运行时再改成fetchall
             return list(result)
             print("sql getdata")
         except:
             print("Error: unable to fetch data")
+        
          
 
     def output(self,cleanwords):
@@ -98,20 +99,21 @@ class prepare:
                 pos = nltk.corpus.wordnet.ADV        
             else:
                 pos = ''
-            word_poses.append([word_tag[0],pos])
+            word_poses.append([(word_tag[0],pos)])
         return word_poses
 
+   
     def wordstem(self,word_poses):   
         lmtzr = WordNetLemmatizer()
         stemwords = []
         for word_pos in word_poses:
             if word_pos:                                # lemmatize()方法将word还原成pos词性的形式
-                lemmatized_word = lmtzr.lemmatize(word_pos)  
+                lemmatized_word = lmtzr.lemmatize(word_pos[0])  
                 stemwords.append(lemmatized_word)
             else:
-                stemwords.append(word_pos[0])      # word_pos = [word_tag[0],pos]
+                stemwords.append(word_pos[0][0])      # word_pos = [(word_tag[0],pos)]
         return stemwords
-    
+   
     def wordclean(self,stemwords):   #去除停用词(emoji什么的先不管后续有时间再处理)
         cleanwords = []
         for stemword in stemwords:
