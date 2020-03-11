@@ -1,15 +1,17 @@
+'''目前没有弄好分行的版本，分行还在改'''
+
 import pymysql
 import pandas as pd
 import nltk
 import string
 import re
 import sys
+from sqlalchemy import create_engine
 from nltk.corpus import wordnet as wn
 from nltk.corpus import stopwords 
 from nltk.stem import WordNetLemmatizer
 
 class usesql:
-
 
     def getdata(self,sql):   # 从mysql里读取数据
         conn = pymysql.connect(
@@ -17,39 +19,29 @@ class usesql:
             port = 3306,
             user = 'Leslie',
             password = 'hsh56912341',
-            db = 'Yelp',
+            database = 'Yelp',
             charset = 'utf8'
         )
         cursor = conn.cursor()
         try:
             cursor.execute(sql)
             result = cursor.fetchmany(5)   #测试的时候先用fetchmany（）,正式运行时再改成fetchall
-            return list(result)
             print("sql getdata")
         except:
             print("Error: unable to fetch data")
-        
+        return result
          
 
-    def output(self,cleanwords):
-        conn = pymysql.connect(
-            host = 'localhost',
-            port = 3306,
-            user = 'Leslie',
-            password = 'hsh56912341',
-            db = 'Yelp',
-            charset = 'utf8'
-        )
-        cursor = conn.cursor()
-        df = pd.DataFrame (list(cleanwords))
-        df.to_sql(              #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
-            name='firstest',
-            conn=conn,
+    def output(self,result,column):    #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+        engine = create_engine('mysql+pymysql://Leslie:hsh56912341@localhost:3306/Yelp?charset=utf8') 
+       
+        df = pd.DataFrame (result,column)
+        df.to_sql(             
+            tablename='firstest',
+            con=engine,
             if_exists='append',
             index=False,
         )
-        cursor.close()
-        conn.close()
         print("sql output")
         
 
@@ -99,19 +91,19 @@ class prepare:
                 pos = nltk.corpus.wordnet.ADV        
             else:
                 pos = ''
-            word_poses.append([(word_tag[0],pos)])
+            word_poses.append([word_tag[0],pos])
         return word_poses
 
    
     def wordstem(self,word_poses):   
-        lmtzr = WordNetLemmatizer()
+        lmtzr = WordNetLemmatizer()        # lemmatize()方法将word还原成pos词性的形式
         stemwords = []
         for word_pos in word_poses:
-            if word_pos:                                # lemmatize()方法将word还原成pos词性的形式
-                lemmatized_word = lmtzr.lemmatize(word_pos[0])  
-                stemwords.append(lemmatized_word)
+            if(len(word_pos[1]) < 1):
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],nltk.corpus.wordnet.NOUN)  
             else:
-                stemwords.append(word_pos[0][0])      # word_pos = [(word_tag[0],pos)]
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],word_pos[1])  # word_pos = [word_tag[0],pos]
+            stemwords.append(lemmatized_word) 
         return stemwords
    
     def wordclean(self,stemwords):   #去除停用词(emoji什么的先不管后续有时间再处理)
@@ -126,6 +118,7 @@ class operate:
     def _main_(self):   #过程整合
         sql = usesql()
         data = sql.getdata('select review from review21;')  #从mysql读取数据                                                  
+        print(data)
         prep = prepare()
         sents = prep.sentoken(data)           #分句
         print(sents)
@@ -154,6 +147,6 @@ op = operate()
 cleanwords = op._main_()
 
 sql = usesql()        #导出清洗后的数据到mysql
-sql.output(cleanwords)
+sql.output(list(cleanwords),[1,2,3])
 
 print('Finished')
