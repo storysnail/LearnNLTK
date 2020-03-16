@@ -38,6 +38,62 @@ class MariadbOp(object):
         if(self.MariadbOpState == True):
             self.conn.close()
 
+    def create_review21_table(self):
+        if(self.MariadbOpState == False):
+            return
+
+        Create_review21_SQL = """CREATE TABLE `review21` (
+                  `id` int(10) NOT NULL AUTO_INCREMENT,
+                  `restaurant_name` varchar(255) NOT NULL,
+                  `review` text,
+                  PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"""
+            
+        try:
+            cursor = self.conn.cursor()
+
+            # 如果情感词表存在则删除
+            cursor.execute("DROP TABLE IF EXISTS review21")
+            cursor.execute(Create_review21_SQL)
+            cursor.close()
+        except Exception as err:
+            print(f'创建review21表格失败')
+            raise err
+
+    def insert_review21_table(self,restaurant_name,review):
+        if(self.MariadbOpState == False):
+            return ''
+
+        Insert_review21_SQL = '\
+INSERT INTO review21(restaurant_name,review) \
+VALUES (%s, %s);'
+        param = (restaurant_name, review)
+        
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(Insert_review21_SQL,param)
+            #print(cursor.rowcount)
+            cursor.close()
+            self.conn.commit()
+        except Exception as err:
+            self.conn.rollback()
+            print(f'插入review21表格失败')
+            raise err
+
+    def fetch_review21_table(self,row_id):
+        if(self.MariadbOpState == False):
+            return ''
+
+        cursor = self.conn.cursor()
+        sql = 'select * from review21 where id=%s;'
+        param = ('%d' %(row_id))
+        cursor.execute(sql,param)
+        #result = cursor.fetchmany(10)   #测试代码的时候先用fetchmany（10）,正式运行时再改成fetchall
+        result = cursor.fetchone()
+        #raw = list(result)
+        raw = result[0]
+        return raw
+    
     def create_AffectiveWords_table(self):
         if(self.MariadbOpState == False):
             return
@@ -75,7 +131,7 @@ class MariadbOp(object):
             print(f'创建AffectiveWords表格失败')
             raise err
 
-    def insert_AffectiveWord(self,word_str,line_num,ordinal_in_line,restaurant_name,tag,pos,relativity):
+    def insert_AffectiveWords_table(self,word_str,line_num,ordinal_in_line,restaurant_name,tag,pos,relativity):
         if(self.MariadbOpState == False):
             return ''
 
@@ -93,10 +149,10 @@ restaurant_name, tag,pos,relativity)
             self.conn.commit()
         except Exception as err:
             self.conn.rollback()
-            print(f'创建AffectiveWords表格失败')
+            print(f'插入AffectiveWords表格失败')
             raise err
         
-    def fetch(self):
+    def fetch_AffectiveWords_table(self):
         if(self.MariadbOpState == False):
             return ''
 

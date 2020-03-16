@@ -68,9 +68,9 @@ if __name__=="__main__":
 
     for i in range(1,20,1):
         restaurant_name,Comment = excelFile.Read_XLSX_RestaurantName_and_Comment(i)
-        mariaDB.insert_AffectiveWord('word'+str(i),i,0,restaurant_name,'NNP','n',0.9)
+        mariaDB.insert_AffectiveWords_table('word'+str(i),i,0,restaurant_name,'NNP','n',0.9)
 
-    mariaDB.fetch()
+    mariaDB.fetch_AffectiveWords_table()
     mariaDB.close()
     '''
 #=====================================================================================================

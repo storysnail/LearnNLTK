@@ -8,54 +8,35 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 class usesql:
-    
-    def _init_(self,conn,cursor):
-        self.conn = conn
-        self.cursor = cursor
+    def __init__(self):
+        self.conn = pymysql.connect(host = 'localhost',port = 3306,
+                                    user = 'Leslie',password = 'hsh56912341',
+                                    db = 'Yelp',charset = 'utf8mb4')
 
 
-    def getdata(self,sql):   # 从mysql里读取数据
-        '''
-        self.conn = pymysql.connect(
-            host = 'localhost',
-            port = 3306,
-            user = 'Leslie',
-            password = 'hsh56912341',
-            db = 'Yelp',
-            charset = 'utf8'
-        )
-        self.cursor = self.conn.cursor()
-        sql='select review from review21;'
-        readfile = self.cursor.execute(sql)
-        result = readfile.fetchmany(10)   #测试的时候先用fetchmany（10）,正式运行时再改成fetchall
-        return list(result)
-        '''
-        print("sql getdata")
+    def getdata(self,row_id):   # 从mysql里读取数据
+        sql = 'select review from review21 where id=%d;'%(row_id)
+        cursor = self.conn.cursor()
+        cursor.execute(sql)
+        result = cursor.fetchone()
+        return result[0]
 
+    #这个成员函数没有改
     def output(self,word):
-        '''
-        self.cursor = self.conn.cursor()
+        cursor = self.conn.cursor()
         df = pd.DataFrame (list(word))
-        df.to_sql(         #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+        df.to_sql(
             name='firstest',
             conn=conn,
             if_exists='append',
             index=False,
         )
         self.cursor.close()
+    def sqlQuit(self):
         self.conn.close()
-        '''
-        print("sql output")
         
 
 class prepare:
-
-    def _init_(self,word,relativity,id,ordinal):
-        self.word = word
-        self.relativity = relativity
-        self.id = id
-        self.ordinal = ordinal
-        
     def sentoken(self,data):   #分句
         #载入英语的分句模型
         token = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -136,10 +117,7 @@ class prepare:
 
 class operate:
     
-    def _main_(self):   #过程整合
-        #sql = usesql()
-        #data = sql.getdata('select review from review21;')    #从mysql读取数据
-        data = "The food was awesome as always but the service and overall hospitality was unsatisfactory. The waiter, Jake, was very unprofessional when we asked a simple question regarding billing/gratuity. He walked off, slapped his leg, and uttered the words ""are you freaking kidding me?"". In addition to making matters even worse, there was a manager by the name of Kelly (red haired) that didn't alleviate the situation. She approached the table very frazzled, with an attitude and didn't introduce herself. I have worked in hospitality for about 8 years to date and the proper way would have been ""Good Evening All, my name is Kelly and I'm one of the managers here. I was told that you all have a concern regarding your bill ?"" SIMPLE. But instead, she made the entire situation much worse and continued to vent about how much of a terrible day she had. Rule #1 in Customer Service, guests/customers are first priority. We do not care how bad of a day you're having. If you're at work or clocked in, you are there to provide a [great] service and that Sunday evening, we did not. Overall, the vibe and the service was extremely lack luster. I advise upper management and corporate to have a mandatory Customer Service training/refresher course for their employees. Thank You"
+    def _main_(self,data):   #过程整合
         prep = prepare()
         sents = prep.sentoken(data)           #分句
         print(sents)
@@ -162,10 +140,14 @@ class operate:
         #cleanword = prep.wordclean(stemword)         #去停用词
         #return cleanword          
 
+sql = usesql()
 Op = operate()
-cleanword = Op._main_()   #导出清洗后的数据到mysql
 
-#sql = usesql()
+for i in range(1,10,1):
+    data = sql.getdata(i)    #从mysql读取数据
+    cleanword = Op._main_(data)   #导出清洗后的数据到mysql
+
+
 #sql.output(cleanword)
 
-print('Finished')
+sql.sqlQuit()

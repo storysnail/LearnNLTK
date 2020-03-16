@@ -40,6 +40,9 @@ class XlsxOp(object):
         
         return self.XlsxOpState
 
+    def Get_Sheet1_rows(self):
+        return int(self.sheet1.nrows)
+    
     # 读取成员变量self.sheet1指向的工作表，读取指定行第零列中的餐馆名和第一列中的评论内容
     # 成功读取返回餐馆名和评论内容，失败返回零长度字符串''
     def Read_XLSX_RestaurantName_and_Comment(self,row):
