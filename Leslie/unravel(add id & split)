@@ -1,0 +1,183 @@
+'''这个是目前处理了分行但是运行的时候result报错的版本'''
+
+import pymysql
+import pandas as pd
+import nltk
+import string
+import re
+import sys
+from sqlalchemy import create_engine
+from nltk.corpus import wordnet as wn
+from nltk.corpus import stopwords 
+from nltk.stem import WordNetLemmatizer
+
+class usesql:
+
+    def getcursor(self):   # 连接mysql
+        conn = pymysql.connect(
+            host = 'localhost',
+            port = 3306,
+            user = 'Leslie',
+            password = 'hsh56912341',
+            database = 'Yelp',
+            charset = 'utf8'
+        )
+        self.cursor = conn.cursor()
+     
+        
+    def getdata(self,i):   # 从mysql里读取数据，只读取一条
+        try:
+            sql = 'select review from review21 where id='+i+';'  #参数是i
+            self.cursor.execute(sql)
+            result = self.cursor.fetchone()   # 读取一条用fetchone  # 从mysql读取一条数据/per time 
+            print("data fetched")
+        except:
+            print("Error: unable to fetch data")
+        return result
+         
+
+    def output(self,result):    #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+        engine = create_engine('mysql+pymysql://Leslie:hsh56912341@localhost:3306/Yelp?charset=utf8') 
+        df = pd.DataFrame (result)
+        df.to_sql(             
+            tablename='firstest',
+            con=engine,
+            if_exists='append',
+            index=False,
+        )
+        print("sql output")
+        
+
+class prepare:
+
+    def sentoken(self,data):   #分句
+        token = nltk.data.load('tokenizers/punkt/english.pickle')
+        sents = token.tokenize(str(data))
+        return sents
+        
+    def sentclean(self,sents):   #去除标点等无用的符号
+        delEStr = string.punctuation + string.digits
+        DelEDict = {}
+        for ch in delEStr:
+            DelEDict[ch] = ''
+        trans = str.maketrans(DelEDict)
+
+        cleansents = []
+        for sent in sents:
+            cleansent = sent.translate(trans) #去掉ASCII标点符号
+            cleansents.append(cleansent)
+        return cleansents
+
+    def wordtoken(self,cleansents):
+        words = []    #分词     
+        for cleansent in cleansents:
+            word = nltk.word_tokenize(cleansent)
+            words.append(word)
+        return words
+
+    def wordtag(self,words): #标注词性
+        word_tags = []   
+        for word in words:    
+            word_tags.extend(nltk.pos_tag(word)) 
+        return word_tags
+
+    def get_wordnet_pos(self,word_tags):  #通过tag获得pos
+        word_poses = []
+        for word_tag in word_tags:        #此处的 word_tag is like ('bigger', 'JJR')
+            if word_tag[1].startswith('J'):
+                pos = nltk.corpus.wordnet.ADJ
+            elif word_tag[1].startswith('V'):
+                pos = nltk.corpus.wordnet.VERB
+            elif word_tag[1].startswith('N'):
+                pos = nltk.corpus.wordnet.NOUN
+            elif word_tag[1].startswith('R'):
+                pos = nltk.corpus.wordnet.ADV        
+            else:
+                pos = ''
+            word_poses.append([word_tag[0],pos])
+        return word_poses
+
+   
+    def wordstem(self,word_poses):   
+        lmtzr = WordNetLemmatizer()        # lemmatize()方法将word还原成pos词性的形式
+        stemwords = []
+        for word_pos in word_poses:
+            if(len(word_pos[1]) < 1):
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],nltk.corpus.wordnet.NOUN)  
+            else:
+                lemmatized_word = lmtzr.lemmatize(word_pos[0],word_pos[1])  # word_pos = [word_tag[0],pos]
+            stemwords.append([lemmatized_word,word_pos[1]]) 
+        return stemwords
+   
+    def wordclean(self,stemwords):   #去除停用词(emoji什么的先不管后续有时间再处理)
+        cleanwords = []
+        for stemword in stemwords:
+            if stemword[0] not in stopwords.words('english'):
+               cleanwords.append(stemword)
+        return cleanwords
+
+#此处应有 打分
+
+#遍历lemmas列表，将其中的形容词做情感词进行分析，之后将分析结果
+            #组成列表[还原后的词形,词性,pos_score,neg_score,obj_score]，
+            #再将这个列表加入senti_words列表
+    def senti(self)
+        senti_words = []
+        for lemma in lemmas:
+            #if(lemma[1] == wordnet.ADJ) or (lemma[1] == wordnet.ADV):
+            if(lemma[1] == wordnet.ADJ):
+                SentiSynsets = swn.senti_synsets(lemma[0], lemma[1])
+                SentiSynset_list = list(SentiSynsets)
+                if(len(SentiSynset_list) > 0):
+                    for SentiSynset in SentiSynset_list:
+                        senti_words.append([lemma[0], lemma[1],SentiSynset.pos_score(),SentiSynset.neg_score(),SentiSynset.obj_score()])
+
+        print(senti_words)
+        return senti_words
+
+
+
+class operate:
+    
+    def _main_(self,data):   #连接数据库后的清洗过程整合                                                  
+        
+        print(data)
+        prep = prepare()
+        sents = prep.sentoken(data)  #分句
+        print(sents)
+        print('\n')
+        cleansents = prep.sentclean(sents)    #去除特殊符号
+        print(cleansents) 
+        print('\n')    
+        words = prep.wordtoken(cleansents) 
+        print(words)
+        print('\n')    #分词
+        word_tags = prep.wordtag(words)     #标注词性
+        print(word_tags)
+        print('\n')
+        word_poses = prep.get_wordnet_pos(word_tags)   #利用tag得到pos
+        print(word_poses)
+        print('\n')
+        stemwords = prep.wordstem(word_poses)          #词形还原                                                            
+        print(stemwords)
+        print('\n')
+        cleanwords = prep.wordclean(stemwords)         #去停用词
+        print(cleanwords)
+        print('\n')
+        return cleanwords          
+
+
+sql = usesql()  #先连接数据库，以免循环时重复连接
+sql.getcursor() 
+#op = operate()
+
+i=1
+while i<5:
+    data = sql.getdata(i)
+    #cleanreview = op._main_(data)  # 每运行一次_main_()就是处理一条review        
+    #sql.output(list(cleanreview))  #导出清洗后的数据到mysql
+    i=i+1
+print(data)
+ 
+
+print('Finished')
