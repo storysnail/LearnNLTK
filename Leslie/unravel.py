@@ -13,12 +13,12 @@ class usesql:
                                     user = 'Leslie',password = 'hsh56912341',
                                     db = 'Yelp',charset = 'utf8mb4')
 
-
     def getdata(self,row_id):   # 从mysql里读取数据
         sql = 'select review from review21 where id=%d;'%(row_id)
         cursor = self.conn.cursor()
         cursor.execute(sql)
         result = cursor.fetchone()
+        cursor.close()
         return result[0]
 
     #这个成员函数没有改
