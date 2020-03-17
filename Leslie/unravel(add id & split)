@@ -27,7 +27,7 @@ class usesql:
         
     def getdata(self,i):   # 从mysql里读取数据，只读取一条
         try:
-            sql = 'select review from review21 where id='+i+';'  #参数是i
+            sql = 'select review from review21 where id='+str(i)+';'  #参数是i
             self.cursor.execute(sql)
             result = self.cursor.fetchone()   # 读取一条用fetchone  # 从mysql读取一条数据/per time 
             print("data fetched")
