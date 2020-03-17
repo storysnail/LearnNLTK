@@ -1,5 +1,3 @@
-'''这个是目前处理了分行但是运行的时候result报错的版本'''
-
 import pymysql
 import pandas as pd
 import nltk
