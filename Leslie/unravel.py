@@ -252,7 +252,7 @@ class prepare:
     def senti(self,cleanwords):
         senti_words = []
         for lemma in cleanwords:
-            if(lemma[2] == wn.ADJ) or (lemma[2] == wn.ADV):
+            if(lemma[2] == wn.ADJ) or (lemma[2] == wn.ADV) or (lemma[2] == wn.VERB):
             #if(lemma[2] == wn.ADJ):
                 SentiSynsets = swn.senti_synsets(lemma[1], lemma[2])
                 SentiSynset_list = list(SentiSynsets)
@@ -269,7 +269,7 @@ class operate:
     
     def _main_(self,data):   #连接数据库后的清洗过程整合                                                  
         
-        #print(data)
+        print(data)
         prep = prepare()
         sents = prep.sentoken(data)  #分句
         print(sents)
@@ -296,13 +296,13 @@ class operate:
         #print(cleanwords)
         #print('\n')
         senti_words = prep.senti(cleanwords)  #根据词性得到评分
-        #print(senti_words)
-        #print('\n')
+        print(senti_words)
+        print('\n')
         return senti_words          
 
 
 
-
+'''
 print("开始扫描数据提取情感词并存入数据库")
 sql = usesql()  #先连接数据库，以免循环时重复连接
 op = operate()
@@ -326,7 +326,7 @@ while i<total:
 sql.sqlQuit()
 print('100%,成功扫描情感词并存入数据库')
 print('------------------------------')
-
+'''
 
 
 print('从数据库中提取CommentID段评论每一句话的多个情感词并计算其得分')
@@ -336,16 +336,12 @@ op = operate()
 #创建等比数列 2^0,2^1,2^2,2^3 .. 2^99共100个，应该够用了吧
 pro_series = numpy.logspace(0,99,100,base=2)
 
-for CommentID in range(1,21,1):  #数据库中的评论ID，数据库中一共有21000条评论,这里只分析前面的21条
-#for CommentID in range(3,4,1):
+#for CommentID in range(1,21,1):  #数据库中的评论ID，数据库中一共有21000条评论,这里只分析前面的21条
+for CommentID in range(5,10,1):
     print('------------------------------')
     print("开始分析第[%d]条评论"%(CommentID))
-    data = sql.getdata(CommentID)
-    print(data)
-
+    op._main_(sql.getdata(CommentID))
     #data = "People say you can't beat Surf N' Turf.It's 5.30 o'clock.gooooooood place!That is good?I looooooove u very much! I am very excited i.e. about the next generation of Apple products."
-    senti_words = op._main_(data)
-    print(senti_words)
 
     words_score = []
     SentenceIDs = sql.getSentenceIDs(CommentID)
@@ -359,10 +355,10 @@ for CommentID in range(1,21,1):  #数据库中的评论ID，数据库中一共�
             CurrentSentiWord = SentiWords[0][0]
             print('------------------------------')
             print("开始计算  [%s]"%(CurrentSentiWord))
-            for loopNum in range(0,len(SentiWords),1):
-                if(CurrentSentiWord == SentiWords[loopNum][0]):
-                    print("%.8f = (%.8f - %.8f) * (1 / %.8f)"%((SentiWords[loopNum][1] - SentiWords[loopNum][2]) * (1/pro_series[Weights]),SentiWords[loopNum][1],SentiWords[loopNum][2],pro_series[Weights]))
-                    score = score + (SentiWords[loopNum][1] - SentiWords[loopNum][2]) * (1/pro_series[Weights])
+            for SentiWord in SentiWords:
+                if(CurrentSentiWord == SentiWord[0]):
+                    print("%.8f = (%.8f - %.8f) * (1 / %.8f)"%((SentiWord[1] - SentiWord[2]) * (1/pro_series[Weights]),SentiWord[1],SentiWord[2],pro_series[Weights]))
+                    score = score + (SentiWord[1] - SentiWord[2]) * (1/pro_series[Weights])
                     print("第%d次求和结果%.8f"%(Weights,score))
                     if(Weights < 100):
                         Weights = Weights + 1
@@ -370,12 +366,18 @@ for CommentID in range(1,21,1):  #数据库中的评论ID，数据库中一共�
                     words_score.append([CommentID,SentenceID,wordID,CurrentSentiWord,score])
                     print("%s -- score:[%.8f]"%(CurrentSentiWord,score))
                     print('------------------------------')
-                    CurrentSentiWord = SentiWords[loopNum][0]
+                    CurrentSentiWord = SentiWord[0]
                     wordID = wordID + 1
                     Weights = 0
                     score = 0
                     print('------------------------------')
                     print("开始计算  [%s]"%(CurrentSentiWord))
+                    print("%.8f = (%.8f - %.8f) * (1 / %.8f)"%((SentiWord[1] - SentiWord[2]) * (1/pro_series[Weights]),SentiWord[1],SentiWord[2],pro_series[Weights]))
+                    score = score + (SentiWord[1] - SentiWord[2]) * (1/pro_series[Weights])
+                    print("第%d次求和结果%.8f"%(Weights,score))
+                    if(Weights < 100):
+                        Weights = Weights + 1
+                        
             words_score.append([CommentID,SentenceID,wordID,CurrentSentiWord,score])
             print("%s -- score:[%.8f]"%(CurrentSentiWord,score))
             print('------------------------------')   
