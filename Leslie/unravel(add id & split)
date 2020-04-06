@@ -23,7 +23,7 @@ class usesql:
      
         
     def getdata(self,i):   # 从mysql里读取数据，只读取一条
-        result = '' #为什么要有这个？？result不是元组吗？？
+        result = '' #这里忽然忘了为什么要有这个''
         try:
             #sql = 'select review from review21 where id='+str(i)+';'  #参数是i
             sql = 'select review from review21 where id=%d;'%(i)
@@ -67,8 +67,8 @@ class usesql:
         finally:
             return result
     
-    
-    def getSentiWords(self,CommentID,SentenceID):   # 通过评论ID和句子ID得到对应情感词元组
+    '''
+    def getSentiWords(self,CommentID,SentenceID):   # 通过评论ID和句子ID得到对应情感词元组(对应计算多个情感词score的版本)
         result = ''
         try:
             sql = 'select `2`,`4`,`5` from firstest where `0`=%d and `1`=%d;'%(CommentID,SentenceID) # 2列是word, 4列是pos分，5列是neg分
@@ -80,17 +80,7 @@ class usesql:
             print("Error: unable to fetch data")
         finally:
             return result
-    
-    def output(self,result):    #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
-        #这里使用了另一种数据库访问方法，按习惯是不应该混用两种数据库连接访问方法的，所以记得按照paradigm3修改一下，额外class一个
-        engine = create_engine('mysql+pymysql://Leslie:hsh56912341@localhost:3306/Yelp?charset=utf8')  
-        df = pd.DataFrame (result) #把传进来的数据结构转换成数据表格
-        #print(df)
-        df.to_sql(             
-            'firstest',
-            con=engine,
-            if_exists='replace',   
-            index=False)
+    '''
     
     def scoreout(self,word_scores):        
         final_scores = []
@@ -100,11 +90,30 @@ class usesql:
             #final_scores.append(score)
         return final_scores
                
-
-
     def sqlQuit(self):
         self.conn.close()
-        
+
+class pd_sql:  #这里使用了另一种数据库访问方法，按习惯是不应该混用两种数据库连接访问方法的，所以使用了pandas的单独class
+
+    def output(self,result):    #将输出结果转为dataframe格式存入mysql，表的名称为测试阶段暂定，正式名称最后命名为reviewdata
+        engine = create_engine('mysql+pymysql://Leslie:hsh56912341@localhost:3306/Yelp?charset=utf8') 
+        df = pd.DataFrame (result)  #把传进来的数据结构转换成数据表格
+        df.to_sql(             
+            name = 'firstest',
+            con = engine,
+            if_exists='replace',
+            index=False,
+            #dtype = {'review_id': int(10)
+             #        'sent_id': int(10)
+              #       'word': varchar(500)
+               #      'pos': char(20)
+                #     'pos_score': float
+                 #    'neg_score': float
+                  #   'obj_score': float
+                   #  'final_score': float
+                    # }
+            )
+       
 class prepare:
 
     def sentoken(self,data):   #分句
@@ -182,7 +191,9 @@ class prepare:
             return self.repeat_replace(repl_word)
         else:
             return repl_word
+    
     #对于"I love u"这样有简写单词的强烈正向感情的句子还是不能正确处理，分词没办法正确将简写单词"u"还原成原有单词"you",这导致后面对词性词义的分析是错误的
+    
     def wordtoken(self,cleansents):
         repeat_reg = re.compile(r'(\w*)(\w)\2(\w*)')
         repl = r'\1\2\3'
@@ -223,6 +234,7 @@ class prepare:
         return word_and_NER_tagss
         
     #此处的 word_tagss是一段评论 is like [[('bigger', 'JJR'),('best', 'JJR')],[('bigger', 'JJR'),('best', 'JJR')]]
+    
     def get_wordnet_pos(self,word_tagss):  #通过tag获得pos
         sent_id = 1
         word_poses = []
@@ -260,10 +272,11 @@ class prepare:
             if stemword[1] not in stopwords.words('english'):
                cleanwords.append(stemword)
         return cleanwords
-    #此处应有 打分
+  
     #遍历lemmas列表，将其中的所有形容词和副词做情感词进行分析，之后将分析结果
     #组成列表[句子ID,还原后的词形,词性,pos_score,neg_score,obj_score],
     #再将这个列表加入senti_words列表
+    
     def senti(self,cleanwords):
         senti_words = []
         for lemma in cleanwords:
@@ -276,7 +289,9 @@ class prepare:
                         #[句子ID,还原后的词形,词性,pos_score,neg_score,obj_score]
                         senti_words.append([lemma[0], lemma[1],lemma[2],SentiSynset.pos_score(),SentiSynset.neg_score(),SentiSynset.obj_score()])
         return senti_words
-    #def senti_uni_method(self,cleanwords):
+        
+    #def sent_uni_method(self,senti_words):        
+        
 class operate:
 
     def _main_(self,data):   #连接数据库后的清洗过程整合                                                  
@@ -312,15 +327,15 @@ class operate:
         #print('\n')
         return senti_words          
 
-'''
 print("开始扫描数据提取情感词并存入数据库")
 sql = usesql()  #先连接数据库，以免循环时重复连接
+ps = pd_sql()
 op = operate()
 i=1
 cleanreview = []
 Percentage = 0
-#total = 21000
-total = 6
+#total = 21001
+total = 5     #测试版本少写几个
 while i<total:
     #输出进度百分比
     print(str(round(i/total*100,1)) + '%')
@@ -329,13 +344,13 @@ while i<total:
     for senti_word in senti_words:
         #[评论ID,句子ID,还原后的词形,词性,pos_score,neg_score,obj_score]
         cleanreview.append([i,senti_word[0],senti_word[1],senti_word[2],senti_word[3],senti_word[4],senti_word[5]]) 
-    sql.output(cleanreview)  #导出清洗后的数据到mysql
+    ps.output(cleanreview)  #导出清洗后的数据到mysql
     i=i+1
     #print(data)
 sql.sqlQuit()
 print('100%,成功扫描情感词并存入数据库')
 print('------------------------------')
-'''
+
 
 #从数据库中提取CommentID段评论第一个情感词并计算其得分：
 sql = usesql() 
@@ -364,8 +379,7 @@ for CommentID in range(1,5,1):
             print("第%s条评论，第%s个情感词%s，得分%s"%(word_score[0],word_score[1],word_score[2],word_score[3]))
             #print('------------------------------')
 
-sql = usesql()
-final_scores = sql.scoreout(word_scores)
+final_scores = ps.scoreout(word_scores) #这里就不管怎么都一个数字一个数字地print出来
 print (final_scores) 
 
 sql.sqlquit()
