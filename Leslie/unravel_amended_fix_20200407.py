@@ -87,7 +87,7 @@ class usesql:
     def scoreout(self,word_scores):        
         final_scores = []
         for word_score in word_scores:
-            final_scores.append(word_score)
+            final_scores.append(word_score) #   <----------这里改了一处  <-------------
         #for score in scores:
             #final_scores.append(score)
         return final_scores
@@ -356,10 +356,10 @@ print('------------------------------')
 sql = usesql() 
 op = operate()
 pro_series = numpy.logspace(0,99,100,base=2)
-word_scores = []
-for CommentID in range(1,5,1):
-    op._main_(sql.getdata(CommentID))
-
+word_scores = []  #    <----------这里从下面的循环里移动出来  <-------------
+for CommentID in range(1,5,1):                  #       |
+    op._main_(sql.getdata(CommentID))           #       |
+                                                # <------
     SentiWords = sql.regetSentiWords(CommentID)
     if SentiWords:  #如果得到的情感词列表不是空的，那么就开始对这些情感词做评分计算
         wordID = 1
@@ -376,7 +376,7 @@ for CommentID in range(1,5,1):
                 pass   
         word_scores.append([CommentID,wordID,CurrentSentiWord,score]) #word_scores形式为 [[2, 1, 'love', 0.5], [2, 1, 'love', 1.0], [2, 1, 'love', 1.15625], [2, 1, 'love', 1.1875]]
 
-
+#               ps改成sql
 final_scores = sql.scoreout(word_scores) #这里就不管怎么都一个数字一个数字地print出来
 for final_score in final_scores:
     print("第%s条评论，第%s个情感词%s，得分%s"%(final_score[0],final_score[1],final_score[2],final_score[3]))
